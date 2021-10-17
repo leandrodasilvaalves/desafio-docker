@@ -1,0 +1,44 @@
+version: '3.8'
+
+volumes:
+  mongo_vol:
+    
+  
+networks:
+  produto_net:
+    driver: bridge
+
+
+services:
+  api:
+    image: leandroalves86/rotten-potatoes:latest
+    container_name: rotten-potatoes
+    build:
+      context: src
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:5000
+    networks:
+      - produto_net
+    environment:
+      - MONGODB_DB=${MONGODB_DB} 
+      - MONGODB_HOST=${MONGODB_HOST}
+      - MONGODB_PORT=${MONGODB_PORT}
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+    depends_on:
+      - mongodb
+
+
+  mongodb:
+    image: mongo:4.4.10
+    container_name: rotten-potatoes-mongo
+    ports:
+      - 27017:27017
+    networks:
+      - produto_net
+    volumes:
+      - mongo_vol:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
