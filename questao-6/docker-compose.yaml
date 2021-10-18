@@ -1,0 +1,99 @@
+version: '3.8'
+
+
+volumes:
+  mongo_vol:
+  postgres_vol:
+
+
+networks:
+  movie_net:
+    driver: bridge
+  review_net:
+    driver: bridge
+  webapp_net:
+    driver: bridge    
+
+
+services:
+
+#============MOVIE API============
+  movie_api:
+    image: leandroalves86/movie:latest
+    container_name: movie-api
+    build:
+      context: movie/src
+      dockerfile: ./Dockerfile
+    ports:
+      - 8181:8181
+    networks: 
+      - movie_net
+      - webapp_net
+    environment:
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@movie_mongodb:27017/admin
+    depends_on:
+      - movie_mongodb
+
+  movie_mongodb:
+    image: mongo:4.4.10
+    container_name: movie-mongodb
+    ports:
+      - 27017:27017
+    networks:
+      - movie_net
+    volumes:
+      - mongo_vol:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
+  
+#============REVIEW API============
+  review_api:
+    image: leandroalves86/review:latest
+    container_name: review-api
+    build:
+      context: review/src/Review.Web
+      dockerfile: ./Dockerfile
+    ports:
+      - 8282:80
+    networks:
+      - review_net
+      - webapp_net
+    environment:
+      - ConnectionStrings__MyConnection=Host=review_postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
+    depends_on:
+      - review_postgres
+
+  review_postgres:
+    image: postgres:alpine3.14
+    container_name: review-postgres
+    ports:
+      - 5432:5432
+    networks:
+      - review_net
+    volumes:
+      - postgres_vol:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    
+
+#============WEB APP============
+  web_app:
+    image: leandroalves86/rotten-potatoes:latest
+    container_name: rotten-potatoes
+    build:
+      context: ./webapp/src
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    networks:
+      - webapp_net
+    environment:
+      - MOVIE_SERVICE_URI=http://movie_api:8181
+      - REVIEW_SERVICE_URI=http://review_api
+    depends_on:
+      - review_api
+      - movie_api
