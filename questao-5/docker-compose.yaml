@@ -1,0 +1,40 @@
+version: '3.8'
+ 
+volumes:
+  mariadb_vol:
+  wordpress_vol:
+
+networks:
+  wordpress_net:
+    driver: bridge
+
+services: 
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    ports:
+      - 8080:80
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+    volumes:
+      - wordpress_vol:/var/www/html
+    networks:
+      - wordpress_net
+    depends_on:
+      - db
+ 
+  db:
+    image: mariadb:10.6.4
+    container_name: mariadb
+    environment:
+      MARIADB_DATABASE : ${MARIADB_DATABASE}
+      MARIADB_USER : ${MARIADB_USER}
+      MARIADB_PASSWORD : ${MARIADB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD : '${MARIADB_RANDOM_ROOT_PASSWORD}'
+    volumes:
+      - mariadb_vol:/var/lib/mysql
+    networks:
+      - wordpress_net
