@@ -1,5 +1,3 @@
- <!-- fabricio@kubedev.io -->
-
 # Questão 02
 
 Certo, você conseguiu criar 4 bancos na sua máquina utilizando containers. Mas tem
